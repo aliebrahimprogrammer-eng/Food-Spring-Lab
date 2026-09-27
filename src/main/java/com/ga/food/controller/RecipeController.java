@@ -1,6 +1,6 @@
-package com.ga.food.Controller;
+package com.ga.food.controller;
 
-import com.ga.food.Model.Recipe;
+import com.ga.food.model.Recipe;
 import com.ga.food.service.RecipeService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;

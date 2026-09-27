@@ -1,12 +1,11 @@
 package com.ga.food.service;
 
-import com.ga.food.Model.Category;
-import com.ga.food.Model.Recipe;
+import com.ga.food.model.Category;
+import com.ga.food.model.Recipe;
 import com.ga.food.exception.InformationNotFoundException;
 import com.ga.food.repository.CategoryRepository;
 import com.ga.food.repository.RecipeRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

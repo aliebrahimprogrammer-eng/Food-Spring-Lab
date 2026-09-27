@@ -1,7 +1,6 @@
 package com.ga.food.repository;
 
-import com.ga.food.Model.Category;
-import org.springframework.data.domain.Example;
+import com.ga.food.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

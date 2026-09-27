@@ -1,6 +1,6 @@
-package com.ga.food.Model;
+package com.ga.food.model;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,6 +49,11 @@ public class Category {
 
     @OneToMany (fetch = FetchType.EAGER, mappedBy = "category", orphanRemoval = true)
     private List<Recipe> recipeList;
+
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name="user_id")
+    private User user;
 
 
 

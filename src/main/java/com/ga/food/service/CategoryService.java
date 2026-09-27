@@ -1,6 +1,6 @@
 package com.ga.food.service;
 
-import com.ga.food.Model.Category;
+import com.ga.food.model.Category;
 import com.ga.food.exception.InformationExistException;
 import com.ga.food.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;

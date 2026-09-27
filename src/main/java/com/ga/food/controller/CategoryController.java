@@ -1,6 +1,6 @@
-package com.ga.food.Controller;
+package com.ga.food.controller;
 
-import com.ga.food.Model.Category;
+import com.ga.food.model.Category;
 import com.ga.food.service.CategoryService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;

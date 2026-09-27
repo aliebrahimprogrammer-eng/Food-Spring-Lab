@@ -1,6 +1,6 @@
 package com.ga.food.repository;
 
-import com.ga.food.Model.Recipe;
+import com.ga.food.model.Recipe;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
