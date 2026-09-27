@@ -3,8 +3,11 @@ package com.ga.food.controller;
 import com.ga.food.model.Recipe;
 import com.ga.food.service.RecipeService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,52 +18,42 @@ public class RecipeController {
 
     private RecipeService recipeService;
 
-    @PostMapping("categories/{categoryId}/recipes")
-    public Recipe createRecipe(
-            @PathVariable(value = "categoryId") Long categoryId,
-            @RequestBody Recipe recipeObject
-    ){
-        System.out.println("calling createRecipe from controller");
-        return recipeService.createRecipe(categoryId,recipeObject);
+
+    @PostMapping("/categories/{categoryId}/recipes")
+    public Recipe createCategoryRecipe(
+            @PathVariable(value = "categoryId") Long categoryId, @RequestBody Recipe recipeObject) {
+        System.out.println("calling createCategoryRecipe ==>");
+        return recipeService.createCategoryRecipe(categoryId, recipeObject);
     }
 
-    // GET ALL RECIPES
-    @GetMapping("/recipes")
-    public List<Recipe> getRecipes() {
-        System.out.println("Calling getRecipes from controller");
-        return recipeService.getRecipes();
-    }
-
-    // GET RECIPE BY ID
-    @GetMapping("/recipes/{id}")
-    public Optional<Recipe> getRecipe(@PathVariable Long id) {
-        System.out.println("Calling getRecipe from controller");
-        return recipeService.getRecipe(id);
-    }
-
-    // GET RECIPES BY CATEGORY
     @GetMapping("/categories/{categoryId}/recipes")
-    public List<Recipe> getRecipesByCategory(
-            @PathVariable Long categoryId
-    ) {
-        System.out.println("Calling getRecipesByCategory from controller");
-        return recipeService.getRecipesByCategory(categoryId);
+    public List<Recipe> getCategoryRecipes(@PathVariable(value = "categoryId") Long categoryId) {
+        System.out.println("calling getCategoryRecipes ==>");
+        return recipeService.getCategoryRecipes(categoryId);
     }
 
-    // UPDATE RECIPE
-    @PutMapping("/recipes/{id}")
-    public Recipe updateRecipe(
-            @PathVariable Long id,
-            @RequestBody Recipe updatedRecipe
-    ) {
-        System.out.println("Calling updateRecipe from controller");
-        return recipeService.updateRecipe(id, updatedRecipe);
+    @GetMapping("/categories/{categoryId}/recipes/{recipeId}")
+    public Recipe getCategoryRecipe(
+            @PathVariable(value = "categoryId") Long categoryId, @PathVariable(value = "recipeId") Long recipeId) {
+        System.out.println("calling getCategoryRecipe ==>");
+        return recipeService.getCategoryRecipe(categoryId, recipeId);
     }
 
-    // DELETE RECIPE
-    @DeleteMapping("/recipes/{id}")
-    public void deleteRecipe(@PathVariable Long id) {
-        System.out.println("Calling deleteRecipe from controller");
-        recipeService.deleteRecipe(id);
+    @PutMapping("/categories/{categoryId}/recipes/{recipeId}")
+    public Recipe updateCategoryRecipe(@PathVariable(value = "categoryId") Long categoryId,
+                                       @PathVariable(value = "recipeId") Long recipeId,
+                                       @RequestBody Recipe recipeObject) {
+        System.out.println("calling getCategoryRecipe ==>");
+        return recipeService.updateCategoryRecipe(categoryId, recipeId, recipeObject);
+    }
+
+    @DeleteMapping("/categories/{categoryId}/recipes/{recipeId}")
+    public ResponseEntity<HashMap<String, String>> deleteCategoryRecipe(
+            @PathVariable(value = "categoryId") Long categoryId, @PathVariable(value = "recipeId") Long recipeId) {
+        System.out.println("calling getCategoryRecipe ==>");
+        recipeService.deleteCategoryRecipe(categoryId, recipeId);
+        HashMap<String, String> responseMessage = new HashMap<>();
+        responseMessage.put("status", "recipe with id: " + recipeId + " was successfully deleted.");
+        return new ResponseEntity<>(responseMessage, HttpStatus.OK);
     }
 }

@@ -1,9 +1,15 @@
 package com.ga.food.service;
 
+import com.ga.food.exception.InformationNotFoundException;
 import com.ga.food.model.Category;
 import com.ga.food.exception.InformationExistException;
+import com.ga.food.model.Recipe;
+import com.ga.food.model.User;
 import com.ga.food.repository.CategoryRepository;
+import com.ga.food.repository.RecipeRepository;
+import com.ga.food.security.MyUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,129 +24,150 @@ import java.util.UUID;
 @Service
 public class CategoryService {
 
+    private final CategoryRepository categoryRepository;
+    private final RecipeRepository recipeRepository;
+
     @Autowired
-    private CategoryRepository categoryRepository;
-
-    /*@Autowired
-    public void setCategoryRepository(CategoryRepository categoryRepository){
+    public CategoryService(CategoryRepository categoryRepository, RecipeRepository recipeRepository) {
         this.categoryRepository = categoryRepository;
-    }*/
+        this.recipeRepository = recipeRepository;
+    }
 
-    public Category createCategory(Category categoryObject){
-        System.out.println("Service: calling create category");
-        Category category = categoryRepository.findByName(categoryObject.getName());
-        if(category!=null){
-            throw new InformationExistException("Category with name " + category.getName() + " already exists");
-        }else{
+    public static User getCurrentLoggedInUser() {
+        MyUserDetails userDetails = (MyUserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        return userDetails.getUser();
+    }
+
+    public List<Category> getCategories() {
+        List<Category> category = categoryRepository.findByUserId(CategoryService.getCurrentLoggedInUser().getId());
+        if (category.isEmpty()) {
+            throw new InformationNotFoundException("no categories found for user id " + CategoryService.getCurrentLoggedInUser().getId());
+        } else {
+            return category;
+        }
+    }
+
+    public Category getCategory(Long categoryId) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId + " not found");
+        } else {
+            return category;
+        }
+    }
+
+    public Category createCategory(Category categoryObject) {
+        Category category = categoryRepository.findByUserIdAndName(
+                CategoryService.getCurrentLoggedInUser().getId(), categoryObject.getName());
+        if (category != null) {
+            throw new InformationExistException("category with name " + category.getName() + " already exists");
+        } else {
+            categoryObject.setUser(getCurrentLoggedInUser());
             return categoryRepository.save(categoryObject);
         }
     }
 
-    public List<Category> getCategories() {
-        System.out.println("Service calling getCategories");
-        return categoryRepository.findAll();
-    }
-
-    public Optional<Category> getCategory(long id) {
-        System.out.println("Service calling getCategory");
-        return categoryRepository.findById(id);
-    }
-
-
-    public Category updateCategory(long id, Category updatedCategory) {
-        System.out.println("Service calling updateCategory");
-
-        Optional<Category> optionalCategory = categoryRepository.findById(id);
-
-        if (optionalCategory.isPresent()) {
-            Category category = optionalCategory.get();
-
-            category.setName(updatedCategory.getName());
-            category.setDescription(updatedCategory.getDescription());
-
+    public Category updateCategory(Long categoryId, Category categoryObject) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId + " not found");
+        } else {
+            category.setDescription(categoryObject.getDescription());
+            category.setName(categoryObject.getName());
+            category.setUser(CategoryService.getCurrentLoggedInUser());
             return categoryRepository.save(category);
         }
-
-        return null;
     }
 
-    public void deleteCategory(long id) {
-        System.out.println("Service calling deleteCategory");
-
-        categoryRepository.deleteById(id);
-    }
-
-    public Category uploadCategoryImage(long id, MultipartFile image) {
-
-        System.out.println("Service: uploading category image");
-
-        Optional<Category> optionalCategory = categoryRepository.findById(id);
-
-        if (optionalCategory.isEmpty()) {
-            return null;
-        }
-
-        Category category = optionalCategory.get();
-
-        try {
-
-            // Create uploads/categories directory
-            Path uploadPath = Paths.get("uploads/categories");
-
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Get original file extension
-            String originalFilename = image.getOriginalFilename();
-
-            String extension = "";
-
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(
-                        originalFilename.lastIndexOf(".")
-                );
-            }
-
-            // Generate unique filename
-            String filename = UUID.randomUUID() + extension;
-
-            // Save image
-            Path filePath = uploadPath.resolve(filename);
-
-            Files.copy(image.getInputStream(), filePath);
-
-            // Save URL in database
-            String imageUrl = "/uploads/categories/" + filename;
-
-            category.setImageUrl(imageUrl);
-
-            return categoryRepository.save(category);
-
-        } catch (IOException e) {
-
-            throw new RuntimeException("Could not save image", e);
+    public String deleteCategory(Long categoryId) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId + " not found");
+        } else {
+            categoryRepository.deleteById(categoryId);
+            return "category with id " + categoryId + " has been successfully deleted";
         }
     }
 
-    public Category uploadCategoryImageAsBytes(long id, MultipartFile image) {
-
-        Optional<Category> optionalCategory =
-                categoryRepository.findById(id);
-
-        if (optionalCategory.isEmpty()) {
-            return null;
+    public Recipe createCategoryRecipe(Long categoryId, Recipe recipeObject) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException(
+                    "category with id " + categoryId + " not belongs to this user or category does not exist");
         }
-
-        Category category = optionalCategory.get();
-
-        try {
-            category.setImage(image.getBytes());
-
-            return categoryRepository.save(category);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Could not save image", e);
+        Recipe recipe = recipeRepository.findByNameAndUserId(recipeObject.getName(), CategoryService.getCurrentLoggedInUser().getId());
+        if (recipe != null) {
+            throw new InformationExistException("recipe with name " + recipe.getName() + " already exists");
         }
+        recipeObject.setUser(CategoryService.getCurrentLoggedInUser());
+        recipeObject.setCategory(category);
+        return recipeRepository.save(recipeObject);
+    }
+
+
+    public List<Recipe> getCategoryRecipes(Long categoryId) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId + " " +
+                    "not belongs to this user or category does not exist");
+        }
+        return category.getRecipeList();
+    }
+
+    public Recipe getCategoryRecipe(Long categoryId, Long recipeId) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId +
+                    " not belongs to this user or category does not exist");
+        }
+        Optional<Recipe> recipe = recipeRepository.findByCategoryId(
+                categoryId).stream().filter(p -> p.getId().equals(recipeId)).findFirst();
+        if (recipe.isEmpty()) {
+            throw new InformationNotFoundException("recipe with id " + recipeId +
+                    " not belongs to this user or recipe does not exist");
+        }
+        return recipe.get();
+    }
+
+
+    public Recipe updateCategoryRecipe(Long categoryId, Long recipeId, Recipe recipeObject) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId +
+                    " not belongs to this user or category does not exist");
+        }
+        Optional<Recipe> recipe = recipeRepository.findByCategoryId(
+                categoryId).stream().filter(p -> p.getId().equals(recipeId)).findFirst();
+        if (recipe.isEmpty()) {
+            throw new InformationNotFoundException("recipe with id " + recipeId +
+                    " not belongs to this user or recipe does not exist");
+        }
+        Recipe oldRecipe = recipeRepository.findByNameAndUserIdAndIdIsNot(
+                recipeObject.getName(), CategoryService.getCurrentLoggedInUser().getId(), recipeId);
+        if (oldRecipe != null) {
+            throw new InformationExistException("recipe with name " + oldRecipe.getName() + " already exists");
+        }
+        recipe.get().setName(recipeObject.getName());
+        recipe.get().setIngredients(recipeObject.getIngredients());
+        recipe.get().setSteps(recipeObject.getSteps());
+        recipe.get().setTime(recipeObject.getTime());
+        recipe.get().setPortion(recipeObject.getPortion());
+        return recipeRepository.save(recipe.get());
+    }
+
+    public void deleteCategoryRecipe(Long categoryId, Long recipeId) {
+        Category category = categoryRepository.findByIdAndUserId(categoryId, CategoryService.getCurrentLoggedInUser().getId());
+        if (category == null) {
+            throw new InformationNotFoundException("category with id " + categoryId +
+                    " not belongs to this user or category does not exist");
+        }
+        Optional<Recipe> recipe = recipeRepository.findByCategoryId(
+                categoryId).stream().filter(p -> p.getId().equals(recipeId)).findFirst();
+        if (recipe.isEmpty()) {
+            throw new InformationNotFoundException("recipe with id " + recipeId +
+                    " not belongs to this user or recipe does not exist");
+        }
+        recipeRepository.deleteById(recipe.get().getId());
     }
 }

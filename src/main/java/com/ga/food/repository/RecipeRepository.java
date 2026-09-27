@@ -7,8 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface RecipeRepository extends JpaRepository <Recipe, Long> {
-    Recipe findByName(String recipeName);
-    List<Recipe> findByCategoryId(Long categoryId);
-}
+public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
+    List<Recipe> findByCategoryId(Long recipeId);
+
+    Recipe findByNameAndUserIdAndIdIsNot(String recipeName, Long userId, Long recipeId);
+
+    Recipe findByNameAndUserId(String recipeName, Long userId);
+}
